@@ -1,9 +1,19 @@
 from tkinter import *
 import pprint
 import time
+import copy
+
+
+class Move:
+    def __init__(self, startx, starty, endx, endy):
+        self.start_x = startx
+        self.start_y = starty
+        self.end_x = endx
+        self.end_y = endy
 
 
 class GameBoard(Frame):
+
     def __init__(self, root, size=8, color1="green", color2="red",
                  pieces=None):
         """size is the size of a square, in pixels"""
@@ -26,12 +36,11 @@ class GameBoard(Frame):
         # Current player's turn, green (1) goes first
         self.active_player = 1
         self.has_moved = False
-        self.jump = False
 
         # Used for game-end
+        self.first_move = True
         self.winner = 0
         self.coloring = False
-
         # This will handle if a pieces dict gets passed in. This might need to
         #  be changed depending on how we want to implement the storage of
         #  player pieces.
@@ -117,9 +126,13 @@ class GameBoard(Frame):
                 if self.has_moved:
                     self.end_turn()
             else:
-                valid, jump = self.check_move_validity(i, j)
-                if valid:
-                    self.move(i, j, jump)
+                # Modified to allow use of our find_move method.
+                if not self.has_moved:
+                    # Find all possible moves for the selected button piece.
+                    possible_moves = self.find_moves(self.selected_x, self.selected_y)
+                    # If the move-to click is a valid possible move, move the piece there.
+                    if (i, j) in possible_moves:
+                        self.move(i, j)
 
     # Blindly selects a button
     def select_button(self, x, y):
@@ -138,55 +151,55 @@ class GameBoard(Frame):
         elif self.pieces[x][y] == 2:
             self.buttons[x][y].configure(bg=self.color2)
 
-    # Blindly checks if the x/y pair is a valid move from the selected piece
-    def check_move_validity(self, x, y):
-        if self.has_moved and not self.jump:
-            return False, False
+    def is_valid_space(self, x, y):
+        """Validates if the space x,y is a valid space on the board.
+        Returns True if x and y are on the board,
+        False otherwise."""
 
-        # Positive means moving towards zero, negative means away from zero
-        deltax = self.selected_x - x
-        deltay = self.selected_y - y
+        if x < 0 or y < 0:
+            return False
+        if x > self.size or y > self.size:
+            return False
+        return True
 
-        # Is the space empty?
-        if self.pieces[x][y] != 0:
-            return False, False
-        # Is it close enough to at least jump?
-        if deltax > 2 or deltax < -2:
-            return False, False
-        if deltay > 2 or deltay < -2:
-            return False, False
+    def find_moves(self, x, y):
+        """Find all possible moves for a piece located at x,y. If there is a possible jump, this method calls 
+        recursive_jump_detector to see if there are any further jumps after that move.
+        Returns a moveset set that contains all possible moves that piece can make."""
 
-        if deltax == 2:
-            if deltay == 0 and self.pieces[x + 1][y] != 0:
-                return True, True
-            elif deltay == -2 and self.pieces[x + 1][y - 1] != 0:
-                return True, True
-            elif deltay == 2 and self.pieces[x + 1][y + 1] != 0:
-                return True, True
-            return False, False
-        elif deltax == -2:
-            if deltay == 0 and self.pieces[x - 1][y] != 0:
-                return True, True
-            elif deltay == -2 and self.pieces[x - 1][y - 1] != 0:
-                return True, True
-            elif deltay == 2 and self.pieces[x - 1][y + 1] != 0:
-                return True, True
-            return False, False
-        elif deltax == 0 and deltay != 1 and deltay != -1:
-            if deltay == -2 and self.pieces[x][y - 1] != 0:
-                return True, True
-            elif deltay == 2 and self.pieces[x][y + 1] != 0:
-                return True, True
-            return False, False
+        moveset = set()
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if i == 0 and j == 0:
+                    continue
+                if not self.is_valid_space(x+i, y+j):
+                    continue
+                if self.pieces[x+i][y+j] == 0:
+                    moveset.add((x+i, y+j))
+                else:
+                    if self.pieces[x + 2*i][y + 2*j] == 0 and self.is_valid_space(x + i*2, y + j*2):
+                        moveset.add((x + i*2, y + j*2))
+                        self.recursive_jump_detector(moveset, x + i*2, y + j*2)
+        return moveset
 
-        # Else it's an empty spot 1 space away, so it's a valid move unless we
-        # have already done a jump (in which case we are only allowed to jump)
-        if self.has_moved and self.jump:
-            return False, False
-        return True, False
+    def recursive_jump_detector(self, moveset, x, y):
+        """A recursive method that will find all possible jumps from a given x,y. Takes a moveset to avoid infinite
+        recursion on places it has already visited.
+        The recursive method mutates the variable moveset as it moves downward. It does not return anything."""
+
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if i == 0 and j == 0:
+                    continue
+                if not self.is_valid_space(x+i, y+j):
+                    continue
+                if self.pieces[x+i][y+j] != 0:
+                    if self.pieces[x+i*2][y+j*2] == 0 and ([x+i*2][y+j*2]) not in moveset and self.is_valid_space([x+i*2][y+j*2]):
+                        moveset.add((x+i*2, y+j*2))
+                        self.recursive_jump_detector(moveset, x+i*2, y+j*2)
 
     # Blindly move the selected piece to the given x/y pair
-    def move(self, x, y, jumped):
+    def move(self, x, y):
         # First move the piece data
         self.pieces[x][y] = self.active_player
         self.pieces[self.selected_x][self.selected_y] = 0
@@ -201,40 +214,20 @@ class GameBoard(Frame):
 
         # And set has_moved and jump
         self.has_moved = True
-        self.jump = jumped
+
 
     def end_turn(self):
         # Reset all of our variables for the next player
         self.has_moved = False
-        self.jump = False
         if self.active_player == 1:
             self.active_player = 2
             self.root.wm_title("Halma Game: Player 2 to Move")
         else:
             self.active_player = 1
             self.root.wm_title("Halma Game: Player 1 to Move")
-
-        # Check Player 1 for win condition
-        self.winner = 1
-        for i in range(0, 4):
-            for j in range(0, 4):
-                if i + j > 3:
-                    continue
-                if self.pieces[self.size - 1 - i][j] != 1:
-                    self.winner = 0
-                    break
-
-        # Check Player 2 for win condition
-        self.winner = 2
-        for i in range(0, 4):
-            for j in range(0, 4):
-                if i + j > 3:
-                    continue
-                if self.pieces[i][self.size - 1 - j] != 2:
-                    self.winner = 0
-                    break
-
-        # Winner loop if we had one
+        # Check to see if there is a winner.
+        self.win_check()
+        # If there was a winner, then prompt who won.
         if self.winner == 1:
             self.root.wm_title("Halma Game: Player 1 Wins!")
             self.root.after(100, self.win_cycle)
@@ -244,6 +237,35 @@ class GameBoard(Frame):
             self.root.wm_title("Halma Game: Player 2 Wins!")
             self.root.after(100, self.win_cycle)
             pp.pprint(self.pieces)
+        # If it is the first move, and the active player is 2, then we can set the first_move flag to False. This way,
+        # the initial board layout doesn't count as a win.
+        if self.first_move and self.active_player == 2:
+            self.first_move = False
+
+    # Verify if there is a winner based on the blocks in the winner areas. If they are full, then one of the two players
+    # have won.
+    def win_check(self):
+        if self.first_move:
+            self.winner = 0
+            return
+        # Check Player 1 space for win condition
+        self.winner = 1
+        for i in range(0, 4):
+            for j in range(0, 4):
+                if i + j > 3:
+                    continue
+                if self.pieces[self.size - 1 - i][j] == 0:
+                    self.winner = 0
+                    break
+        # Check Player 2 space for win condition
+        self.winner = 2
+        for i in range(0, 4):
+            for j in range(0, 4):
+                if i + j > 3:
+                    continue
+                if self.pieces[i][self.size - 1 - j] == 0:
+                    self.winner = 0
+                    break
 
     def win_cycle(self):
         # Fancy flashing end screen
@@ -293,6 +315,24 @@ class GameBoard(Frame):
 
     def get_pieces(self):
         return self.pieces
+
+    def huristic(self):
+        # TODO: Build heuristic function
+        return 1
+
+    def generate_future_board(self, movelist):
+        """Generates a future board based on a movelist.
+        will run through each move in the movelist exhaustively, making modifications
+        to a deep copy of the current game board.
+        returns a dictionary of the future board."""
+
+        # Movelist: A list of move objects that we can use to generate a future board.
+        future_board = copy.deepcopy(self.pieces)
+        for move in movelist:
+            current_piece = future_board[move.start_x][move.start_y]
+            future_board[move.start_x][move.start_y] = 0
+            future_board[move.end_x][move.end_y] = current_piece
+        return future_board
 
 
 if __name__ == "__main__":

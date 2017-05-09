@@ -13,7 +13,6 @@ class Move:
 
 
 class GameBoard(Frame):
-
     def __init__(self, root, size=8, color1="green", color2="red",
                  pieces=None):
         """size is the size of a square, in pixels"""
@@ -129,7 +128,8 @@ class GameBoard(Frame):
                 # Modified to allow use of our find_move method.
                 if not self.has_moved:
                     # Find all possible moves for the selected button piece.
-                    possible_moves = self.find_moves(self.selected_x, self.selected_y)
+                    possible_moves = self.find_moves(self.selected_x,
+                                                     self.selected_y)
                     # If the move-to click is a valid possible move, move the piece there.
                     if (i, j) in possible_moves:
                         self.move(i, j)
@@ -158,7 +158,7 @@ class GameBoard(Frame):
 
         if x < 0 or y < 0:
             return False
-        if x > self.size or y > self.size:
+        if x >= self.size or y >= self.size:
             return False
         return True
 
@@ -172,14 +172,16 @@ class GameBoard(Frame):
             for j in range(-1, 2):
                 if i == 0 and j == 0:
                     continue
-                if not self.is_valid_space(x+i, y+j):
+                if not self.is_valid_space(x + i, y + j):
                     continue
-                if self.pieces[x+i][y+j] == 0:
-                    moveset.add((x+i, y+j))
+                if self.pieces[x + i][y + j] == 0:
+                    moveset.add((x + i, y + j))
                 else:
-                    if self.pieces[x + 2*i][y + 2*j] == 0 and self.is_valid_space(x + i*2, y + j*2):
-                        moveset.add((x + i*2, y + j*2))
-                        self.recursive_jump_detector(moveset, x + i*2, y + j*2)
+                    if self.is_valid_space(x + i * 2, y + j * 2) and \
+                                    self.pieces[x + 2 * i][y + 2 * j] == 0:
+                        moveset.add((x + i * 2, y + j * 2))
+                        self.recursive_jump_detector(moveset, x + i * 2,
+                                                     y + j * 2)
         return moveset
 
     def recursive_jump_detector(self, moveset, x, y):
@@ -191,12 +193,15 @@ class GameBoard(Frame):
             for j in range(-1, 2):
                 if i == 0 and j == 0:
                     continue
-                if not self.is_valid_space(x+i, y+j):
+                if not self.is_valid_space(x + i, y + j):
                     continue
-                if self.pieces[x+i][y+j] != 0:
-                    if self.pieces[x+i*2][y+j*2] == 0 and ([x+i*2][y+j*2]) not in moveset and self.is_valid_space([x+i*2][y+j*2]):
-                        moveset.add((x+i*2, y+j*2))
-                        self.recursive_jump_detector(moveset, x+i*2, y+j*2)
+                if self.pieces[x + i][y + j] != 0:
+                    if self.is_valid_space(x + i * 2, y + j * 2) and \
+                          self.pieces[x + i * 2][y + j * 2] == 0 and \
+                          (x + i * 2, y + j * 2) not in moveset:
+                        moveset.add((x + i * 2, y + j * 2))
+                        self.recursive_jump_detector(moveset, x + i * 2,
+                                                     y + j * 2)
 
     # Blindly move the selected piece to the given x/y pair
     def move(self, x, y):
@@ -214,7 +219,6 @@ class GameBoard(Frame):
 
         # And set has_moved and jump
         self.has_moved = True
-
 
     def end_turn(self):
         # Reset all of our variables for the next player
@@ -237,13 +241,14 @@ class GameBoard(Frame):
             self.root.wm_title("Halma Game: Player 2 Wins!")
             self.root.after(100, self.win_cycle)
             pp.pprint(self.pieces)
-        # If it is the first move, and the active player is 2, then we can set the first_move flag to False. This way,
-        # the initial board layout doesn't count as a win.
+        # If it is the first move, and the active player is 2, then we can set
+        # the first_move flag to False. This way, the initial board layout
+        #  doesn't count as a win.
         if self.first_move and self.active_player == 2:
             self.first_move = False
 
-    # Verify if there is a winner based on the blocks in the winner areas. If they are full, then one of the two players
-    # have won.
+    # Verify if there is a winner based on the blocks in the winner areas. If
+    # they are full, then one of the two players have won.
     def win_check(self):
         if self.first_move:
             self.winner = 0

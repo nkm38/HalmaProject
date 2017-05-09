@@ -230,7 +230,7 @@ class GameBoard(Frame):
             self.active_player = 1
             self.root.wm_title("Halma Game: Player 1 to Move")
         # Check to see if there is a winner.
-        self.win_check()
+        self.winner = self.win_check()
         # If there was a winner, then prompt who won.
         if self.winner == 1:
             self.root.wm_title("Halma Game: Player 1 Wins!")
@@ -249,28 +249,38 @@ class GameBoard(Frame):
 
     # Verify if there is a winner based on the blocks in the winner areas. If
     # they are full, then one of the two players have won.
-    def win_check(self):
+    def win_check(self, check_board=None):
+        if check_board:
+            board = check_board
+        else:
+            board = self.pieces
+
         if self.first_move:
-            self.winner = 0
-            return
+            return 0
         # Check Player 1 space for win condition
-        self.winner = 1
+        check = 1
         for i in range(0, 4):
             for j in range(0, 4):
                 if i + j > 3:
                     continue
-                if self.pieces[self.size - 1 - i][j] == 0:
-                    self.winner = 0
+                if board[self.size - 1 - i][j] == 0:
+                    check = 0
                     break
+        if check == 1:
+            return check
         # Check Player 2 space for win condition
-        self.winner = 2
+        check = 2
         for i in range(0, 4):
             for j in range(0, 4):
                 if i + j > 3:
                     continue
-                if self.pieces[i][self.size - 1 - j] == 0:
-                    self.winner = 0
+                if board[i][self.size - 1 - j] == 0:
+                    check = 0
                     break
+        if check == 2:
+            return check
+        else:
+            return 0
 
     def win_cycle(self):
         # Fancy flashing end screen

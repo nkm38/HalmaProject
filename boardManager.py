@@ -40,6 +40,22 @@ class GameBoard(Frame):
         self.first_move = True
         self.winner = 0
         self.coloring = False
+
+        self.camps = {}
+        for i in range(0, self.size):
+            self.camps[i] = {}
+            for j in range(0, self.size):
+                self.camps[i][j] = False
+        for i in range(0,4):
+            for j in range(0, 4):
+                if i + j > 3:
+                    continue
+                # Red goal camp
+                self.camps[i][self.size - 1 - j] = 2
+                # Green goal camp
+                self.camps[self.size - 1 - i][j] = 1
+
+
         # This will handle if a pieces dict gets passed in. This might need to
         #  be changed depending on how we want to implement the storage of
         #  player pieces.
@@ -151,7 +167,7 @@ class GameBoard(Frame):
         elif self.pieces[x][y] == 2:
             self.buttons[x][y].configure(bg=self.color2)
 
-    def is_valid_space(self, x, y):
+    def is_valid_space(self, player, startx, starty, x, y):
         """Validates if the space x,y is a valid space on the board.
         Returns True if x and y are on the board,
         False otherwise."""
@@ -159,6 +175,8 @@ class GameBoard(Frame):
         if x < 0 or y < 0:
             return False
         if x >= self.size or y >= self.size:
+            return False
+        if self.camps[startx][starty] == player and self.camps[x][y] != player:
             return False
         return True
 
@@ -172,12 +190,12 @@ class GameBoard(Frame):
             for j in range(-1, 2):
                 if i == 0 and j == 0:
                     continue
-                if not self.is_valid_space(x + i, y + j):
+                if not self.is_valid_space(self.active_player, x, y, x + i, y + j):
                     continue
                 if self.pieces[x + i][y + j] == 0:
                     moveset.add((x + i, y + j))
                 else:
-                    if self.is_valid_space(x + i * 2, y + j * 2) and \
+                    if self.is_valid_space(self.active_player, x, y, x + i * 2, y + j * 2) and \
                                     self.pieces[x + 2 * i][y + 2 * j] == 0:
                         moveset.add((x + i * 2, y + j * 2))
                         self.recursive_jump_detector(moveset, x + i * 2,
@@ -193,10 +211,10 @@ class GameBoard(Frame):
             for j in range(-1, 2):
                 if i == 0 and j == 0:
                     continue
-                if not self.is_valid_space(x + i, y + j):
+                if not self.is_valid_space(self.active_player, x, y, x + i, y + j):
                     continue
                 if self.pieces[x + i][y + j] != 0:
-                    if self.is_valid_space(x + i * 2, y + j * 2) and \
+                    if self.is_valid_space(self.active_player, x, y, x + i * 2, y + j * 2) and \
                           self.pieces[x + i * 2][y + j * 2] == 0 and \
                           (x + i * 2, y + j * 2) not in moveset:
                         moveset.add((x + i * 2, y + j * 2))

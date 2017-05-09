@@ -3,13 +3,12 @@ import pprint
 import time
 import copy
 
+from skynet import alphabeta_search
 
 class Move:
-    def __init__(self, startx, starty, endx, endy):
-        self.start_x = startx
-        self.start_y = starty
-        self.end_x = endx
-        self.end_y = endy
+    def __init__(self, start, end):
+        self.start_x, self.start_y = start
+        self.end_x, self.end_y = end
 
 
 class GameBoard(Frame):
@@ -181,7 +180,7 @@ class GameBoard(Frame):
         return True
 
     def find_moves(self, x, y):
-        """Find all possible moves for a piece located at x,y. If there is a possible jump, this method calls 
+        """Find all possible moves for a piece located at x,y. If there is a possible jump, this method calls
         recursive_jump_detector to see if there are any further jumps after that move.
         Returns a moveset set that contains all possible moves that piece can make."""
 
@@ -349,7 +348,7 @@ class GameBoard(Frame):
     def get_pieces(self):
         return self.pieces
 
-    def huristic(self):
+    def heuristic(self):
         # TODO: Build heuristic function
         return 1
 
@@ -366,6 +365,17 @@ class GameBoard(Frame):
             future_board[move.start_x][move.start_y] = 0
             future_board[move.end_x][move.end_y] = current_piece
         return future_board
+
+    def successors(self):
+        "Return a list of legal (move, state) pairs."
+        successors = []
+        for i in range(self.size):
+            for j in range(self.size):
+                if self.pieces[i][j] != 0:
+                    for move in self.find_moves(i, j):
+                        move_ = Move((i, j), move)
+                        successors.append((move_, self.generate_future_board([move_])))
+        return successors
 
 
 if __name__ == "__main__":

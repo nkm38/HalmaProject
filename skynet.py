@@ -1,7 +1,6 @@
-import copy
+import time
 
-
-def alphabeta_search(game, d=3, cutoff_test=None, eval_fn=None):
+def alphabeta_search(game, d=13, cutoff_test=None, eval_fn=None):
     """Search game to determine best action; use alpha-beta pruning.
     This version cuts off search and uses an evaluation function."""
 
@@ -32,7 +31,7 @@ def alphabeta_search(game, d=3, cutoff_test=None, eval_fn=None):
             beta = min(beta, v)
         return v
 
-    cutoff_test = lambda state, depth: depth > d or game.win_check(state)
+    cutoff_test = lambda state, depth: time.time() - game.start_time > 30 or depth > d or game.win_check(state)
     eval_fn = eval_fn or game.heuristic
     seq = game.successors(game.active_player)
     best = seq[0]

@@ -374,10 +374,9 @@ class GameBoard(Frame):
 
     def ai_turn(self, h):
         self.ai_moving = True
-
-        start = time.time()
+        self.start_time = time.time()
         move_to_make = alphabeta_search(self, eval_fn=h)
-        print(time.time() - start)
+        print(time.time() - self.start_time)
         self.select_button(move_to_make.start_x, move_to_make.start_y)
         self.move(move_to_make.end_x, move_to_make.end_y)
         self.deselect_button(move_to_make.end_x, move_to_make.end_y)

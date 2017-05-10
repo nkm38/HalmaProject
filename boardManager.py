@@ -378,6 +378,8 @@ class GameBoard(Frame):
         move_to_make = alphabeta_search(self, eval_fn=h)
         print(time.time() - self.start_time)
         self.select_button(move_to_make.start_x, move_to_make.start_y)
+        self.root.update_idletasks()
+        time.sleep(1)
         self.move(move_to_make.end_x, move_to_make.end_y)
         self.deselect_button(move_to_make.end_x, move_to_make.end_y)
         self.ai_moving = False
@@ -424,8 +426,8 @@ def heuristic1(state, player):
 
 def heuristic2(state, player):
     size = len(state)
-    goal_x = size if player == 1 else 0
-    goal_y = 0 if player == 1 else size
+    goal_x = size-1 if player == 1 else 0
+    goal_y = 0 if player == 1 else size-1
     score = 0
     for i in range(size):
         for j in range(size):

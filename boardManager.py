@@ -2,7 +2,6 @@ from tkinter import *
 import pprint
 import time
 import copy
-
 from skynet import alphabeta_search
 
 class Move:
@@ -13,9 +12,10 @@ class Move:
 
 class GameBoard(Frame):
     def __init__(self, root, size=8, color1="green", color2="red",
-                 pieces=None):
+                 pieces=None, heuristic_p1=None, heuristic_p2=None):
         """size is the size of a square, in pixels"""
         self.root = root
+        self.ai_moving = False
 
         if size not in [8, 10, 15]:
             raise ValueError(
@@ -80,6 +80,12 @@ class GameBoard(Frame):
                     self.pieces[self.size - 1 - i][j] = 2
 
         self.build_board()
+        self.heuristic_p1 = None
+        self.heuristic_p2 = None
+        if heuristic_p1:
+            self.heuristic_p1 = heuristic_p1
+        if heuristic_p2:
+            self.heuristic_p2 = heuristic_p2
 
     # Initialize the frame.
     # Build the board of buttons.
@@ -129,6 +135,8 @@ class GameBoard(Frame):
 
     # The actual meat of our program, the button click events
     def buttonclick(self, event, i, j):
+        if self.ai_moving:
+            return
         if self.winner != 0:
             return
         if not self.piece_selected:
@@ -264,6 +272,14 @@ class GameBoard(Frame):
         if self.first_move and self.active_player == 2:
             self.first_move = False
 
+        if self.heuristic_p1 and self.active_player == 1:
+            # call the AI move.
+            self.ai_turn(self.heuristic_p1)
+        elif self.heuristic_p2 and self.active_player == 2:
+            # call the AI move.
+            self.ai_turn(self.heuristic_p2)
+
+
     # Verify if there is a winner based on the blocks in the winner areas. If
     # they are full, then one of the two players have won.
     def win_check(self, check_board=None):
@@ -348,8 +364,26 @@ class GameBoard(Frame):
     def get_pieces(self):
         return self.pieces
 
+    def is_ai_first(self):
+        if self.heuristic_p1:
+            self.ai_turn(self.heuristic_p1)
+
+    def ai_turn(self, h):
+        self.ai_moving = True
+
+        start = time.time()
+        move_to_make = alphabeta_search(self, eval_fn=h)
+        print(time.time() - start)
+        self.select_button(move_to_make.start_x, move_to_make.start_y)
+        self.move(move_to_make.end_x, move_to_make.end_y)
+        self.deselect_button(move_to_make.end_x, move_to_make.end_y)
+        self.ai_moving = False
+        # print("HELLO WORLD!")
+        self.root.update_idletasks()
+        self.end_turn()
+
     def heuristic(self):
-        # TODO: Build heuristic function
+
         return 1
 
     def generate_future_board(self, movelist):
@@ -366,17 +400,25 @@ class GameBoard(Frame):
             future_board[move.end_x][move.end_y] = current_piece
         return future_board
 
-    def successors(self):
+    def successors(self,cur_player):
         "Return a list of legal (move, state) pairs."
         successors = []
         for i in range(self.size):
             for j in range(self.size):
-                if self.pieces[i][j] != 0:
+                if self.pieces[i][j] == cur_player:
                     for move in self.find_moves(i, j):
                         move_ = Move((i, j), move)
                         successors.append((move_, self.generate_future_board([move_])))
         return successors
 
+
+def heuristic1(something):
+
+    return 1
+
+
+def heuristic2(something):
+    return 1
 
 if __name__ == "__main__":
     pp = pprint.PrettyPrinter()
@@ -387,7 +429,8 @@ if __name__ == "__main__":
     Grid.rowconfigure(root, 0, weight=1)
     Grid.columnconfigure(root, 0, weight=1)
     # Initialize the board with no inputs.
-    board = GameBoard(root)
+    board = GameBoard(root, heuristic_p1=heuristic1, heuristic_p2=heuristic2)
+    root.after(1000, board.is_ai_first)
     # Run the board mainloop
     root.mainloop()
 

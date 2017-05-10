@@ -4,6 +4,8 @@ import time
 import copy
 import random
 
+import collections
+
 from skynet import alphabeta_search
 
 class Move:
@@ -276,10 +278,10 @@ class GameBoard(Frame):
 
         if self.heuristic_p1 and self.active_player == 1:
             # call the AI move.
-            self.ai_turn(self.heuristic_p1)
+            self.root.after(100, self.ai_turn(self.heuristic_p1))
         elif self.heuristic_p2 and self.active_player == 2:
             # call the AI move.
-            self.ai_turn(self.heuristic_p2)
+            self.root.after(100, self.ai_turn(self.heuristic_p2))
 
 
     # Verify if there is a winner based on the blocks in the winner areas. If
@@ -368,7 +370,7 @@ class GameBoard(Frame):
 
     def is_ai_first(self):
         if self.heuristic_p1:
-            self.ai_turn(self.heuristic_p1)
+            self.root.after(100, self.ai_turn(self.heuristic_p1))
 
     def ai_turn(self, h):
         self.ai_moving = True
@@ -395,7 +397,10 @@ class GameBoard(Frame):
         returns a dictionary of the future board."""
 
         # Movelist: A list of move objects that we can use to generate a future board.
-        future_board = copy.deepcopy(self.pieces)
+        future_board = collections.defaultdict(dict)
+        for i in self.pieces:
+            for j in self.pieces:
+                future_board[i][j] = self.pieces[i][j]
         for move in movelist:
             current_piece = future_board[move.start_x][move.start_y]
             future_board[move.start_x][move.start_y] = 0

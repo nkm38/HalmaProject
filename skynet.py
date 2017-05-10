@@ -8,7 +8,7 @@ def alphabeta_search(game, d=5, cutoff_test=None, eval_fn=None):
         if cutoff_test(state, depth):
             return eval_fn(state, game.active_player)
         v = -float("inf")
-        succs = game.successors(game.active_player)
+        succs = game.successors(game.active_player, state)
         for (a, s) in succs:
             v = max(v, min_value(s, alpha, beta, depth+1))
             if v >= beta:
@@ -23,7 +23,7 @@ def alphabeta_search(game, d=5, cutoff_test=None, eval_fn=None):
         if cutoff_test(state, depth):
             return eval_fn(state, game.active_player)
         v = float("inf")
-        succs = game.successors(op_player)
+        succs = game.successors(op_player, state)
         for (a, s) in succs:
             v = min(v, max_value(s, alpha, beta, depth+1))
             if v <= alpha:
@@ -33,7 +33,7 @@ def alphabeta_search(game, d=5, cutoff_test=None, eval_fn=None):
 
     cutoff_test = lambda state, depth: time.time() - game.start_time > 30 or depth > d or game.win_check(state)
     eval_fn = eval_fn or game.heuristic
-    seq = game.successors(game.active_player)
+    seq = game.successors(game.active_player, game.pieces)
     best = seq[0]
     best_score = min_value(best[1], -float("inf"), float("inf"), 0)
     for x in seq[1:]:

@@ -391,7 +391,7 @@ class GameBoard(Frame):
 
         return 1
 
-    def generate_future_board(self, movelist):
+    def generate_future_board(self, movelist, state):
         """Generates a future board based on a movelist.
         will run through each move in the movelist exhaustively, making modifications
         to a deep copy of the current game board.
@@ -399,16 +399,16 @@ class GameBoard(Frame):
 
         # Movelist: A list of move objects that we can use to generate a future board.
         future_board = collections.defaultdict(dict)
-        for i in self.pieces:
-            for j in self.pieces:
-                future_board[i][j] = self.pieces[i][j]
+        for i in state:
+            for j in state:
+                future_board[i][j] = state[i][j]
         for move in movelist:
             current_piece = future_board[move.start_x][move.start_y]
             future_board[move.start_x][move.start_y] = 0
             future_board[move.end_x][move.end_y] = current_piece
         return future_board
 
-    def successors(self, cur_player):
+    def successors(self, cur_player, state):
         "Return a list of legal (move, state) pairs."
         successors = []
         for i in range(self.size):
@@ -416,7 +416,7 @@ class GameBoard(Frame):
                 if self.pieces[i][j] == cur_player:
                     for move in self.find_moves(i, j):
                         move_ = Move((i, j), move)
-                        successors.append((move_, self.generate_future_board([move_])))
+                        successors.append((move_, self.generate_future_board([move_], state)))
         return successors
 
 
@@ -433,6 +433,7 @@ def heuristic2(state, player):
         for j in range(size):
             if state[i][j] == player:
                 score += abs(goal_x - i) + abs(goal_y - j)
+    print(-score)
     return -score
 
 if __name__ == "__main__":

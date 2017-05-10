@@ -2,6 +2,8 @@ from tkinter import *
 import pprint
 import time
 import copy
+import random
+
 from skynet import alphabeta_search
 
 class Move:
@@ -400,7 +402,7 @@ class GameBoard(Frame):
             future_board[move.end_x][move.end_y] = current_piece
         return future_board
 
-    def successors(self,cur_player):
+    def successors(self, cur_player):
         "Return a list of legal (move, state) pairs."
         successors = []
         for i in range(self.size):
@@ -412,13 +414,20 @@ class GameBoard(Frame):
         return successors
 
 
-def heuristic1(something):
+def heuristic1(state, player):
+    return random.randint(0, 10)
 
-    return 1
 
-
-def heuristic2(something):
-    return 1
+def heuristic2(state, player):
+    size = len(state)
+    goal_x = size if player == 1 else 0
+    goal_y = 0 if player == 1 else size
+    score = 0
+    for i in range(size):
+        for j in range(size):
+            if state[i][j] == player:
+                score += abs(goal_x - i) + abs(goal_y - j)
+    return -score
 
 if __name__ == "__main__":
     pp = pprint.PrettyPrinter()
@@ -429,7 +438,7 @@ if __name__ == "__main__":
     Grid.rowconfigure(root, 0, weight=1)
     Grid.columnconfigure(root, 0, weight=1)
     # Initialize the board with no inputs.
-    board = GameBoard(root, heuristic_p1=heuristic1, heuristic_p2=heuristic2)
+    board = GameBoard(root, heuristic_p2=heuristic2)
     root.after(1000, board.is_ai_first)
     # Run the board mainloop
     root.mainloop()
